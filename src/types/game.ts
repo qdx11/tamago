@@ -28,6 +28,7 @@ export interface GameState {
   activeEvent: RandomEvent | null;
   soundEnabled: boolean;
   menuOpen: boolean;
+  menuIndex: number;        // 0~5, 현재 선택된 메뉴 인덱스
   selectedAction: Action | null;
   notificationQueue: string[];
   version: number; // 저장 파일 마이그레이션용

@@ -33,6 +33,10 @@ interface GameStore extends GameState {
   toggleSound: () => void;
   // 메뉴 열기/닫기
   toggleMenu: () => void;
+  // 메뉴 커서 이동
+  navMenu: (direction: 'prev' | 'next') => void;
+  // 현재 메뉴 선택 실행
+  selectMenu: () => void;
   // 게임 초기화
   resetGame: () => void;
   // 알림 추가
@@ -50,6 +54,7 @@ const initialState: GameState = {
   activeEvent: null,
   soundEnabled: true,
   menuOpen: false,
+  menuIndex: 0,
   selectedAction: null,
   notificationQueue: [],
   version: 1,
@@ -226,6 +231,30 @@ export const useGameStore = create<GameStore>((set, get) => ({
   toggleSound: () => set(state => ({ soundEnabled: !state.soundEnabled })),
 
   toggleMenu: () => set(state => ({ menuOpen: !state.menuOpen })),
+
+  navMenu: (direction: 'prev' | 'next') => {
+    const { phase } = get();
+    if (phase !== 'playing' && phase !== 'stats') return;
+    set(state => ({
+      menuIndex: direction === 'prev'
+        ? (state.menuIndex - 1 + 6) % 6
+        : (state.menuIndex + 1) % 6,
+    }));
+  },
+
+  selectMenu: () => {
+    const { menuIndex, phase } = get();
+    const MENU_ITEMS = ['feed', 'sleep', 'play', 'clean', 'medicine', 'stats'] as const;
+    const item = MENU_ITEMS[menuIndex];
+
+    if (item === 'stats') {
+      // stats 페이즈에서 다시 OK → playing으로 복귀 (토글)
+      set({ phase: phase === 'stats' ? 'playing' : 'stats' });
+    } else {
+      get().performAction(item);
+      set({ phase: 'playing' });
+    }
+  },
 
   resetGame: () => {
     set(initialState);

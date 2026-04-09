@@ -9,7 +9,9 @@ import { DeviceScreen } from './components/device/DeviceScreen';
 import { DeviceButtons } from './components/device/DeviceButtons';
 import { DeviceIndicators } from './components/device/DeviceIndicators';
 import { EggSprite } from './components/sprites/EggSprite';
-import { PetSprite } from './components/sprites/PetSprite';
+import { MenuBar } from './components/screen/MenuBar';
+import { PetView } from './components/screen/PetView';
+import { StatsView } from './components/screen/StatsView';
 
 // ── 알 화면 ──
 
@@ -42,48 +44,6 @@ function EggScreen({ onHatch }: { onHatch: () => void }) {
   );
 }
 
-function PlayingScreen() {
-  const pet = useGameStore(s => s.pet);
-  if (!pet) return null;
-
-  const statBars = [
-    { label: '🍖', value: pet.stats.hunger },
-    { label: '😊', value: pet.stats.happiness },
-    { label: '💊', value: pet.stats.health },
-    { label: '💤', value: pet.stats.sleep },
-    { label: '🛁', value: pet.stats.hygiene },
-  ];
-
-  return (
-    <div className="flex flex-col items-center justify-between w-full h-full p-2">
-      {/* 펫 이름 + 단계 */}
-      <div style={{ fontSize: '6px', color: '#0f380f', fontFamily: "'Press Start 2P', monospace" }}>
-        {pet.name} · {pet.stage}
-      </div>
-
-      {/* 실제 SVG 펫 스프라이트 */}
-      <PetSprite pet={pet} size={80} />
-
-      {/* 스탯 바 */}
-      <div className="flex flex-col gap-1 w-full px-1">
-        {statBars.map(({ label, value }) => (
-          <div key={label} className="flex items-center gap-1">
-            <span style={{ fontSize: '8px' }}>{label}</span>
-            <div className="flex-1 h-1.5 rounded-full" style={{ backgroundColor: '#0f380f33' }}>
-              <div
-                className="h-full rounded-full transition-all"
-                style={{
-                  width: `${value}%`,
-                  backgroundColor: value > 50 ? '#0f380f' : value > 25 ? '#8b6914' : '#8b1414',
-                }}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 function DeadScreen({ onReset }: { onReset: () => void }) {
   return (
@@ -165,7 +125,7 @@ function NewGameForm({ onStart }: { onStart: (name: string) => void }) {
 // ── 메인 앱 ──
 
 function App() {
-  const { phase, pet, startNewGame, hatchEgg, performAction, advanceTick, resetGame } = useGameStore();
+  const { phase, pet, menuIndex, startNewGame, hatchEgg, navMenu, selectMenu, advanceTick, resetGame } = useGameStore();
 
   // 저장된 게임 불러오기
   useEffect(() => {
@@ -175,9 +135,9 @@ function App() {
     }
   }, []);
 
-  // 게임 루프 (phase가 playing/sleeping/event일 때만)
+  // 게임 루프 (phase가 playing/stats/sleeping/event일 때만)
   useEffect(() => {
-    const activePhasees = ['playing', 'menu', 'sleeping', 'event'];
+    const activePhasees = ['playing', 'menu', 'stats', 'sleeping', 'event'];
     if (!activePhasees.includes(phase)) return;
 
     const id = setInterval(advanceTick, TICK_INTERVAL_MS);
@@ -204,36 +164,47 @@ function App() {
     return <NewGameForm onStart={startNewGame} />;
   }
 
+  // 네비게이션 페이즈 여부
+  const isNavPhase = phase === 'playing' || phase === 'stats';
+
   // 버튼 핸들러
   const handleA = () => {
     if (phase === 'egg') hatchEgg();
     else if (phase === 'dead') resetGame();
-    else performAction('feed');
+    else if (isNavPhase) navMenu('prev');
   };
 
   const handleB = () => {
     if (phase === 'egg') hatchEgg();
     else if (phase === 'dead') resetGame();
-    else performAction('play');
+    else if (isNavPhase) selectMenu();
   };
 
   const handleC = () => {
     if (phase === 'egg') hatchEgg();
     else if (phase === 'dead') resetGame();
-    else performAction('clean');
+    else if (isNavPhase) navMenu('next');
   };
 
   // 버튼 라벨 (단계별)
-  const btnLabels = phase === 'egg' || phase === 'dead'
+  const btnLabels = (phase === 'egg' || phase === 'dead')
     ? { a: 'TAP', b: 'TAP', c: 'TAP' }
-    : { a: 'FEED', b: 'PLAY', c: 'BATH' };
+    : { a: '◀', b: 'OK', c: '▶' };
 
   return (
     <DeviceShell>
       <DeviceIndicators needsAttention={needsAttention} />
       <DeviceScreen>
         {phase === 'egg' && <EggScreen onHatch={hatchEgg} />}
-        {(phase === 'playing' || phase === 'menu' || phase === 'event') && <PlayingScreen />}
+        {(phase === 'playing' || phase === 'menu' || phase === 'stats' || phase === 'event') && pet && (
+          <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%' }}>
+            <MenuBar menuIndex={menuIndex} />
+            {phase === 'stats'
+              ? <StatsView stats={pet.stats} height={140} />
+              : <PetView pet={pet} height={140} />
+            }
+          </div>
+        )}
         {phase === 'dead' && <DeadScreen onReset={resetGame} />}
       </DeviceScreen>
       <DeviceButtons
