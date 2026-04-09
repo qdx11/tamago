@@ -37,6 +37,8 @@ interface GameStore extends GameState {
   navMenu: (direction: 'prev' | 'next') => void;
   // 현재 메뉴 선택 실행
   selectMenu: () => void;
+  // 미니게임 종료 (success: 2라운드 이상 성공 여부)
+  endMinigame: (success: boolean) => void;
   // 게임 초기화
   resetGame: () => void;
   // 알림 추가
@@ -250,9 +252,34 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (item === 'stats') {
       // stats 페이즈에서 다시 OK → playing으로 복귀 (토글)
       set({ phase: phase === 'stats' ? 'playing' : 'stats' });
+    } else if (item === 'play') {
+      // 미니게임 페이즈로 전환
+      set({ phase: 'minigame', menuOpen: false });
     } else {
       get().performAction(item);
       set({ phase: 'playing' });
+    }
+  },
+
+  endMinigame: (success: boolean) => {
+    const { pet } = get();
+    if (!pet) return;
+
+    if (success) {
+      const newStats = {
+        ...pet.stats,
+        happiness: Math.min(100, pet.stats.happiness + 20),
+        sleep: Math.max(0, pet.stats.sleep - 5),
+      };
+      set({ pet: { ...pet, stats: newStats }, phase: 'playing' });
+      get().addNotification('미니게임 성공! 😊 행복도 상승!');
+    } else {
+      const newStats = {
+        ...pet.stats,
+        happiness: Math.max(0, pet.stats.happiness - 5),
+      };
+      set({ pet: { ...pet, stats: newStats }, phase: 'playing' });
+      get().addNotification('아쉬워요... 다음엔 잘 해봐요!');
     }
   },
 

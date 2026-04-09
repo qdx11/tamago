@@ -12,6 +12,7 @@ import { EggSprite } from './components/sprites/EggSprite';
 import { MenuBar } from './components/screen/MenuBar';
 import { PetView } from './components/screen/PetView';
 import { StatsView } from './components/screen/StatsView';
+import { MiniGame } from './components/screen/MiniGame';
 
 // ── 알 화면 ──
 
@@ -125,7 +126,8 @@ function NewGameForm({ onStart }: { onStart: (name: string) => void }) {
 // ── 메인 앱 ──
 
 function App() {
-  const { phase, pet, menuIndex, startNewGame, hatchEgg, navMenu, selectMenu, advanceTick, resetGame } = useGameStore();
+  const { phase, pet, menuIndex, startNewGame, hatchEgg, navMenu, selectMenu, advanceTick, resetGame, endMinigame } = useGameStore();
+  const [miniGamePressCount, setMiniGamePressCount] = useState(0);
 
   // 저장된 게임 불러오기
   useEffect(() => {
@@ -137,7 +139,7 @@ function App() {
 
   // 게임 루프 (phase가 playing/stats/sleeping/event일 때만)
   useEffect(() => {
-    const activePhasees = ['playing', 'menu', 'stats', 'sleeping', 'event'];
+    const activePhasees = ['playing', 'menu', 'stats', 'sleeping', 'event', 'minigame'];
     if (!activePhasees.includes(phase)) return;
 
     const id = setInterval(advanceTick, TICK_INTERVAL_MS);
@@ -177,6 +179,7 @@ function App() {
   const handleB = () => {
     if (phase === 'egg') hatchEgg();
     else if (phase === 'dead') resetGame();
+    else if (phase === 'minigame') setMiniGamePressCount(c => c + 1);
     else if (isNavPhase) selectMenu();
   };
 
@@ -189,6 +192,8 @@ function App() {
   // 버튼 라벨 (단계별)
   const btnLabels = (phase === 'egg' || phase === 'dead')
     ? { a: 'TAP', b: 'TAP', c: 'TAP' }
+    : phase === 'minigame'
+    ? { a: '·', b: 'OK!', c: '·' }
     : { a: '◀', b: 'OK', c: '▶' };
 
   return (
@@ -203,6 +208,15 @@ function App() {
               ? <StatsView stats={pet.stats} height={140} />
               : <PetView pet={pet} height={140} />
             }
+          </div>
+        )}
+        {phase === 'minigame' && pet && (
+          <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%' }}>
+            <MenuBar menuIndex={2} />
+            <MiniGame
+              externalPress={miniGamePressCount}
+              onComplete={endMinigame}
+            />
           </div>
         )}
         {phase === 'dead' && <DeadScreen onReset={resetGame} />}

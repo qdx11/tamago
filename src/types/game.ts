@@ -2,7 +2,7 @@
 
 import type { Pet, PetStats, Action } from './pet';
 
-export type GamePhase = 'new_game' | 'egg' | 'playing' | 'menu' | 'stats' | 'sleeping' | 'event' | 'dead';
+export type GamePhase = 'new_game' | 'egg' | 'playing' | 'menu' | 'stats' | 'sleeping' | 'event' | 'dead' | 'minigame';
 
 export type DayNightPhase = 'dawn' | 'day' | 'dusk' | 'night';
 
