@@ -34,6 +34,9 @@ export function loadGame(): GameState | null {
       return null;
     }
 
+    // 구버전 세이브 호환 (menuIndex 없을 경우 기본값)
+    if (typeof parsed.menuIndex !== 'number') parsed.menuIndex = 0;
+
     return parsed as GameState;
   } catch (err) {
     console.warn('[Persistence] 불러오기 실패:', err);

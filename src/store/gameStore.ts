@@ -96,15 +96,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const { pet } = get();
     if (!pet || pet.stage !== 'egg') return;
 
-    set(state => ({
-      pet: state.pet ? {
-        ...state.pet,
-        stage: 'baby',
-        stageEnteredAtTick: state.tick,
-        stats: getInitialStats(),
-      } : null,
-      phase: 'playing',
-    }));
+    const newPetState = {
+      ...pet,
+      stage: 'baby' as const,
+      stageEnteredAtTick: get().tick,
+      stats: getInitialStats(),
+    };
+    const nextState = { pet: newPetState, phase: 'playing' as const };
+    set(nextState);
+    saveGame({ ...get(), ...nextState });
   },
 
   performAction: (action: Action) => {
@@ -129,6 +129,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     };
 
     set({ pet: updatedPet, menuOpen: false });
+    saveGame({ ...get(), pet: updatedPet });
   },
 
   advanceTick: () => {
