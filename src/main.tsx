@@ -4,7 +4,7 @@ import './index.css'
 import App from './App.tsx'
 import { PreviewPage } from './pages/PreviewPage.tsx'
 
-const isPreview = window.location.pathname === '/preview';
+const isPreview = ['/preview', '/preview.html', '/preview/'].includes(window.location.pathname);
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
